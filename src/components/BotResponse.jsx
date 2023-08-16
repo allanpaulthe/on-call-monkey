@@ -31,7 +31,7 @@ const BotResponse = ({ response, chatLogRef }) => {
           block: "end",
         });
       }
-    }, 50);
+    }, 2);
     return () => clearInterval(msg); // clear interval on component unmount
   }, [chatLogRef, response, isPrinting]);
 

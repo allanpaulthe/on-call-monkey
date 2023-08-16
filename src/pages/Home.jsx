@@ -5,9 +5,9 @@ import Error from "../components/Error";
 import IntroSection from "../components/IntroSection";
 import Loading from "../components/Loading";
 import { useSearchParams } from "react-router-dom";
-import {api} from '@pagerduty/pdjs';
+import { api } from "@pagerduty/pdjs";
 
-const pd = api({token: 'u+NwexbkdzLxaPsDYWkQ'});
+const pd = api({ token: "u+NwexbkdzLxaPsDYWkQ" });
 
 const Home = () => {
   const [inputPrompt, setInputPrompt] = useState("");
@@ -18,20 +18,41 @@ const Home = () => {
   const chatLogRef = useRef(null);
 
   const fetchPDData = (incident_id) => {
-    if(!incident_id) return;
+    if (!incident_id) return;
     pd.get(`/incidents/${incident_id}`)
-    .then(({data} )=> {
-      console.log(data)
-      setChatLog([
-        ...chatLog,
-        {
-          chatPrompt: `Fetch details for incident #${incident_id}`,
-          botMessage: data.incident.summary,
-        },
-      ]);
-    })
-    .catch(console.error);
-  }
+      .then(({ data }) => {
+        console.log(data);
+        const incidentApiResponse = data.incident;
+        const summary = incidentApiResponse.summary;
+        const createdAt = new Date(
+          incidentApiResponse.created_at
+        ).toLocaleString();
+        const updatedAt = new Date(
+          incidentApiResponse.updated_at
+        ).toLocaleString();
+        const status = incidentApiResponse.status;
+        const assigneeName =
+          incidentApiResponse.assignments[0]?.assignee?.summary || "Unassigned";
+
+        // Create a human-readable string
+        const humanReadableInfo = `
+          Incident Summary: ${summary}
+          Created At: ${createdAt}
+          Updated At: ${updatedAt}
+          Status: ${status}
+          Assignee: ${assigneeName}
+        `;
+
+        setChatLog([
+          ...chatLog,
+          {
+            chatPrompt: `Fetch details for incident #${incident_id}`,
+            botMessage: humanReadableInfo,
+          },
+        ]);
+      })
+      .catch(console.error);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
