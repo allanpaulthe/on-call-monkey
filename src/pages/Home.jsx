@@ -4,14 +4,34 @@ import BotResponse from "../components/BotResponse";
 import Error from "../components/Error";
 import IntroSection from "../components/IntroSection";
 import Loading from "../components/Loading";
+import { useSearchParams } from "react-router-dom";
+import {api} from '@pagerduty/pdjs';
+
+const pd = api({token: 'u+NwexbkdzLxaPsDYWkQ'});
 
 const Home = () => {
   const [inputPrompt, setInputPrompt] = useState("");
   const [chatLog, setChatLog] = useState([]);
   const [err, setErr] = useState(false);
   const [responseFromAPI, setReponseFromAPI] = useState(false);
-
+  const [searchParams] = useSearchParams();
   const chatLogRef = useRef(null);
+
+  const fetchPDData = (incident_id) => {
+    if(!incident_id) return;
+    pd.get(`/incidents/${incident_id}`)
+    .then(({data} )=> {
+      console.log(data)
+      setChatLog([
+        ...chatLog,
+        {
+          chatPrompt: `Fetch details for incident #${incident_id}`,
+          botMessage: data.incident.summary,
+        },
+      ]);
+    })
+    .catch(console.error);
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -29,7 +49,7 @@ const Home = () => {
 
       async function callAPI() {
         try {
-          const response = await fetch("https://talk-bot.onrender.com/", {
+          const response = await fetch("/prompt", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: inputPrompt }),
@@ -39,7 +59,7 @@ const Home = () => {
             ...chatLog,
             {
               chatPrompt: inputPrompt,
-              botMessage: data.botResponse,
+              botMessage: data.answer,
             },
           ]);
           setErr(false);
@@ -56,13 +76,13 @@ const Home = () => {
   };
 
   useEffect(() => {
+    fetchPDData(searchParams.get("incident_id"));
     if (chatLogRef.current) {
       chatLogRef.current.scrollIntoView({
         behavior: "smooth",
         block: "end",
       });
     }
-
     return () => {};
   }, []);
 
